@@ -1,0 +1,82 @@
+{
+  "name": "MatTailor AI",
+  "short_name": "MatTailor",
+  "description": "Intelligent Material Discovery and Recommendation System",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
+  "categories": ["productivity", "business", "education"],
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png", 
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-maskable-192x192.png",
+      "sizes": "192x192", 
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/pwa-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png", 
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot-desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/screenshot-mobile.png", 
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Material Search",
+      "short_name": "Search",
+      "description": "Start a new material search",
+      "url": "/?shortcut=search",
+      "icons": [
+        {
+          "src": "/search-icon.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "AI Recommendation", 
+      "short_name": "AI Rec",
+      "description": "Get AI-powered material recommendations",
+      "url": "/?tab=ai-recommendation",
+      "icons": [
+        {
+          "src": "/ai-icon.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
+}
