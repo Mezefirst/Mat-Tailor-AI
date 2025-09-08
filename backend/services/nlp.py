@@ -254,7 +254,7 @@ class NLPProcessor:
             
             # Use the spark LLM if available
             if hasattr(globals(), 'spark'):
-                llm_prompt = spark.llmPrompt`${prompt}`
+                llm_prompt = spark.llmPrompt(f"{prompt}")
                 response = await spark.llm(llm_prompt, "gpt-4o-mini", True)
                 
                 # Parse LLM response
