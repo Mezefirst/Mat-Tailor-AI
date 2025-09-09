@@ -84,21 +84,25 @@ docker-compose -f docker-compose.prod.yml -f docker-compose.ssl.yml up -d
 
 ### Frontend (.env)
 ```
-VITE_API_URL=http://localhost:8000
-VITE_ENVIRONMENT=development
+VITE_API_URL=https://api.mattailor.com
+VITE_ENVIRONMENT=production
 VITE_APP_NAME=MatTailor AI
 ```
 
 ### Backend (.env)
 ```
-ENVIRONMENT=development
-DEBUG=True
-SECRET_KEY=your-secret-key
+ENVIRONMENT=production
+DEBUG=False
+SECRET_KEY=your-strong-secret-key-change-this-in-production
 DATABASE_URL=postgresql://user:pass@localhost/mattailor
 REDIS_URL=redis://localhost:6379/0
 OPENAI_API_KEY=your-openai-key
 HUGGINGFACE_API_KEY=your-hf-key
-CORS_ORIGINS=["http://localhost:3000","https://your-frontend.com"]
+MATWEB_API_KEY=your-matweb-api-key
+MATERIALS_PROJECT_API_KEY=your-materials-project-key
+CORS_ORIGINS=["https://mattailor.com","https://www.mattailor.com"]
+FRONTEND_URL=https://mattailor.com
+BACKEND_URL=https://api.mattailor.com
 ```
 
 ## Database Setup

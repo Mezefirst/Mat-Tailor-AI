@@ -3,7 +3,7 @@ MatTailor AI Backend - FastAPI Application
 Intelligent Material Discovery and Recommendation System
 """
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
@@ -12,6 +12,10 @@ import uvicorn
 import logging
 from datetime import datetime
 import os
+
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 from services.recommender import MaterialRecommender
 from services.nlp import NLPProcessor
@@ -22,8 +26,14 @@ from models.tradeoff import TradeoffAnalysis
 from config.settings import get_settings
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
+
+# Initialize rate limiter
+limiter = Limiter(key_func=get_remote_address)
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -34,14 +44,9 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# Configure CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Configure for production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Add rate limiting
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Initialize services
 settings = get_settings()
@@ -50,8 +55,18 @@ nlp_processor = NLPProcessor()
 simulator = PropertySimulator()
 rl_planner = RLPlanner()
 
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 @app.get("/")
-async def root():
+@limiter.limit("100/minute")
+async def root(request: Request):
     """API status and version information"""
     return {
         "service": "MatTailor AI API",
@@ -68,7 +83,8 @@ async def root():
     }
 
 @app.get("/health")
-async def health_check():
+@limiter.limit("200/minute") 
+async def health_check(request: Request):
     """Health check endpoint for monitoring"""
     try:
         # Basic health checks
@@ -86,17 +102,18 @@ async def health_check():
         }
         return health_status
     except Exception as e:
-        logger.error(f"Health check failed: {e}")
+        logger.error(f"Health check failed: {str(e)}")
         raise HTTPException(status_code=503, detail="Service temporarily unavailable")
 
 @app.post("/recommend", response_model=RecommendationResult)
-async def recommend_materials(query: MaterialQuery):
+@limiter.limit("30/minute")
+async def recommend_materials(request: Request, query: MaterialQuery):
     """
     Recommend optimal materials based on requirements
     Supports both structured queries and natural language processing
     """
     try:
-        logger.info(f"Processing recommendation request: {query.dict()}")
+        logger.info(f"Processing recommendation request for user: {get_remote_address(request)}")
         
         # Process natural language query if provided
         if query.natural_language_query:
@@ -119,37 +136,41 @@ async def recommend_materials(query: MaterialQuery):
         return recommendations
         
     except Exception as e:
-        logger.error(f"Recommendation failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Recommendation failed: {str(e)}")
+        logger.error(f"Recommendation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Recommendation service temporarily unavailable")
 
 @app.post("/alternatives")
-async def suggest_alternatives(material_id: str, requirements: Dict[str, Any]):
+@limiter.limit("30/minute")
+async def suggest_alternatives(request: Request, material_id: str, requirements: Dict[str, Any]):
     """Suggest alternative materials for a given material"""
     try:
         alternatives = await recommender.find_alternatives(material_id, requirements)
         return {"alternatives": alternatives}
     except Exception as e:
-        logger.error(f"Alternative search failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Alternative search failed: {str(e)}")
+        logger.error(f"Alternative search failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Alternative search service temporarily unavailable")
 
 @app.post("/tradeoff", response_model=TradeoffAnalysis)
-async def analyze_tradeoffs(material_ids: List[str], criteria: List[str]):
+@limiter.limit("20/minute")
+async def analyze_tradeoffs(request: Request, material_ids: List[str], criteria: List[str]):
     """
     Analyze trade-offs between multiple materials across different criteria
     """
     try:
-        logger.info(f"Analyzing trade-offs for materials: {material_ids}")
+        logger.info(f"Analyzing trade-offs for {len(material_ids)} materials")
         
         analysis = await simulator.analyze_tradeoffs(material_ids, criteria)
         
         return analysis
         
     except Exception as e:
-        logger.error(f"Trade-off analysis failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Trade-off analysis failed: {str(e)}")
+        logger.error(f"Trade-off analysis failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Trade-off analysis service temporarily unavailable")
 
 @app.post("/simulate")
+@limiter.limit("20/minute")
 async def simulate_material_properties(
+    request: Request,
     composition: Dict[str, float],
     conditions: Dict[str, Any]
 ):
@@ -158,11 +179,13 @@ async def simulate_material_properties(
         properties = await simulator.simulate_custom_material(composition, conditions)
         return {"simulated_properties": properties}
     except Exception as e:
-        logger.error(f"Property simulation failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Simulation failed: {str(e)}")
+        logger.error(f"Property simulation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Simulation service temporarily unavailable")
 
 @app.post("/plan_rl")
+@limiter.limit("10/minute")
 async def plan_with_rl(
+    request: Request,
     objectives: List[str],
     constraints: Dict[str, Any],
     background_tasks: BackgroundTasks
@@ -188,11 +211,13 @@ async def plan_with_rl(
         }
         
     except Exception as e:
-        logger.error(f"RL planning failed: {e}")
-        raise HTTPException(status_code=500, detail=f"RL planning failed: {str(e)}")
+        logger.error(f"RL planning failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="RL planning service temporarily unavailable")
 
 @app.get("/materials/search")
+@limiter.limit("60/minute")
 async def search_materials(
+    request: Request,
     query: str,
     category: Optional[str] = None,
     limit: int = 20
@@ -202,11 +227,12 @@ async def search_materials(
         results = await recommender.search_materials(query, category, limit)
         return {"materials": results}
     except Exception as e:
-        logger.error(f"Material search failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")
+        logger.error(f"Material search failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Search service temporarily unavailable")
 
 @app.get("/materials/{material_id}")
-async def get_material_details(material_id: str):
+@limiter.limit("100/minute")
+async def get_material_details(request: Request, material_id: str):
     """Get detailed information about a specific material"""
     try:
         material = await recommender.get_material_by_id(material_id)
@@ -216,11 +242,13 @@ async def get_material_details(material_id: str):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Material retrieval failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Retrieval failed: {str(e)}")
+        logger.error(f"Material retrieval failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Material retrieval service temporarily unavailable")
 
 @app.get("/suppliers")
+@limiter.limit("60/minute")
 async def get_suppliers(
+    request: Request,
     material_id: str,
     region: Optional[str] = None,
     min_quantity: Optional[int] = None
@@ -230,8 +258,8 @@ async def get_suppliers(
         suppliers = await recommender.get_suppliers(material_id, region, min_quantity)
         return {"suppliers": suppliers}
     except Exception as e:
-        logger.error(f"Supplier search failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Supplier search failed: {str(e)}")
+        logger.error(f"Supplier search failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Supplier search service temporarily unavailable")
 
 if __name__ == "__main__":
     uvicorn.run(
