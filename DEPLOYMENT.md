@@ -2,6 +2,44 @@
 
 ## Quick Deploy Options
 
+### Production Deployment (Recommended)
+
+#### Prerequisites
+- Docker and Docker Compose
+- Domain name with DNS pointing to your server
+- SSL certificates (Let's Encrypt recommended)
+
+#### Quick Production Setup
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Mezefirst/Mat-Tailor-AI.git
+   cd Mat-Tailor-AI
+   ```
+
+2. Create production environment file:
+   ```bash
+   cp backend/.env.example .env
+   # Edit .env with your production values
+   ```
+
+3. Run automated deployment:
+   ```bash
+   ./scripts/deploy.sh your-domain.com .env
+   ```
+
+#### Manual Production Setup
+1. Set up SSL certificates:
+   ```bash
+   ./scripts/setup-ssl.sh your-domain.com
+   ```
+
+2. Configure environment variables in `.env`
+
+3. Deploy with Docker Compose:
+   ```bash
+   docker-compose -f docker-compose.prod.yml up -d
+   ```
+
 ### Frontend Deployment
 
 #### Vercel (Recommended)
@@ -10,7 +48,7 @@
 3. Set output directory: `dist`
 4. Add environment variables:
    ```
-   VITE_API_URL=https://your-backend-url.com
+   VITE_API_URL=https://api.your-domain.com
    VITE_ENVIRONMENT=production
    ```
 5. Deploy automatically on git push
@@ -22,13 +60,33 @@
    - Publish directory: `dist`
 3. Environment variables:
    ```
-   VITE_API_URL=https://your-backend-url.com
+   VITE_API_URL=https://api.your-domain.com
    VITE_ENVIRONMENT=production
    ```
 
 ### Backend Deployment
 
-#### Railway (Recommended)
+#### Production Docker (Recommended)
+Use the included production configuration:
+```bash
+# Configure environment variables
+cp backend/.env.example .env
+nano .env  # Edit with your production values
+
+# Deploy with SSL and monitoring
+./scripts/deploy.sh your-domain.com .env
+```
+
+This includes:
+- HTTPS with Let's Encrypt SSL
+- Rate limiting and security headers
+- PostgreSQL database with connection pooling
+- Redis caching
+- Prometheus monitoring
+- Grafana dashboards
+- Automated health checks
+
+#### Railway (Alternative)
 1. Connect GitHub repository
 2. Select backend folder as root
 3. Railway will auto-detect Python and install requirements
@@ -36,7 +94,9 @@
    ```
    ENVIRONMENT=production
    SECRET_KEY=your-secret-key
-   OPENAI_API_KEY=your-openai-key (optional)
+   OPENAI_API_KEY=your-openai-key
+   MATWEB_API_KEY=your-matweb-key
+   MATERIALS_PROJECT_API_KEY=your-materials-project-key
    ```
 
 #### Heroku
@@ -168,20 +228,86 @@ docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
 ## Security Considerations
 
 ### HTTPS Setup
-- Use Let's Encrypt for SSL certificates
-- Configure HSTS headers
-- Implement proper CORS policies
+- Automatic SSL certificate generation with Let's Encrypt
+- HSTS headers for enhanced security
+- Secure cookie handling
+- Proper Content Security Policy headers
 
 ### API Security
-- Rate limiting implemented
+- Rate limiting: 30 requests/minute for AI endpoints, 100/minute for static
 - Input validation on all endpoints
-- SQL injection protection via ORM
-- Secrets management via environment variables
+- SQL injection protection via parameterized queries
+- No sensitive data in error responses
+- CORS properly configured for production domains
 
-### Frontend Security
-- Content Security Policy headers
-- XSS protection
-- Secure cookie handling
+## Third-Party Data Source Integration
+
+### MatWeb Integration
+1. Sign up for MatWeb API access at https://matweb.com/api
+2. Add your API key to environment variables:
+   ```bash
+   MATWEB_API_KEY=your-matweb-api-key
+   ```
+3. Ensure compliance with MatWeb's data licensing terms
+4. Configure rate limits according to your subscription tier
+
+### Materials Project Integration  
+1. Register at https://materialsproject.org/ and get API key
+2. Add your API key to environment variables:
+   ```bash
+   MATERIALS_PROJECT_API_KEY=your-materials-project-api-key
+   ```
+3. Review and comply with Materials Project data usage policies
+4. Set appropriate caching TTL to respect API quotas
+
+### API Key Security
+- Store all API keys as environment variables
+- Never commit API keys to version control
+- Use different keys for development and production
+- Regularly rotate API keys for security
+- Monitor API usage to detect unusual activity
+
+### Data Licensing Compliance
+- Review terms of service for each data provider
+- Implement proper attribution where required
+- Cache data appropriately to minimize API calls
+- Respect rate limits and usage quotas
+- Consider data retention policies
+
+## Rate Limiting Configuration
+
+### API Rate Limits (per minute)
+- `/recommend`: 30 requests - AI-powered recommendations are resource intensive
+- `/tradeoff`: 20 requests - Complex analysis operations
+- `/simulate`: 20 requests - Material property simulations  
+- `/plan_rl`: 10 requests - Reinforcement learning operations
+- `/materials/search`: 60 requests - Standard search operations
+- `/materials/{id}`: 100 requests - Material detail retrieval
+- `/suppliers`: 60 requests - Supplier information lookup
+- `/health`: 200 requests - Health check endpoint
+
+### Nginx Rate Limits
+- API endpoints: 60 requests/minute with burst of 10
+- Static assets: 100 requests/minute with burst of 20
+- Global rate limiting by IP address
+
+### Customizing Rate Limits
+Update the rate limits in `backend/main.py`:
+```python
+@limiter.limit("30/minute")  # Adjust as needed
+async def recommend_materials(request: Request, query: MaterialQuery):
+```
+
+For Nginx, edit `nginx/nginx.conf`:
+```nginx
+limit_req_zone $binary_remote_addr zone=api:10m rate=60r/m;
+```
+
+### Monitoring Security
+- Grafana dashboard protected with basic auth
+- Prometheus metrics secured
+- Access logs for security analysis
+- Automated alerting for suspicious activity
 
 ## Backup & Recovery
 
@@ -199,7 +325,77 @@ psql mattailor < backup_20231201.sql
 - Version control for model artifacts
 - Automated model retraining pipelines
 
-## Troubleshooting
+## Troubleshooting Deployment
+
+### Common Issues
+
+#### SSL Certificate Problems
+```bash
+# Check certificate status
+./scripts/setup-ssl.sh your-domain.com
+
+# Verify certificate files
+ls -la nginx/ssl/
+```
+
+#### CORS Errors
+1. Verify CORS_ORIGINS environment variable is set correctly
+2. Check that frontend URL matches allowed origins
+3. Ensure HTTPS is used consistently
+
+#### Database Connection Issues
+```bash
+# Check database logs
+docker-compose -f docker-compose.prod.yml logs postgres
+
+# Test database connection
+docker-compose -f docker-compose.prod.yml exec backend python -c "
+import asyncpg
+import os
+import asyncio
+async def test(): 
+    conn = await asyncpg.connect(os.getenv('DATABASE_URL'))
+    await conn.close()
+    print('Database connected successfully')
+asyncio.run(test())
+"
+```
+
+#### API Rate Limiting
+- Monitor rate limit headers in API responses
+- Adjust limits in `backend/main.py` if needed
+- Check Nginx access logs for rate limit violations
+
+#### Environment Variables
+```bash
+# Verify all required environment variables are set
+docker-compose -f docker-compose.prod.yml exec backend env | grep -E "(SECRET_KEY|DATABASE_URL|CORS_ORIGINS)"
+```
+
+### Health Checks
+- Backend: `GET /health`
+- Frontend: Check if main page loads
+- Database: Connection test in backend logs
+- Redis: Cache operations in backend logs
+
+### Log Analysis
+```bash
+# View all service logs
+docker-compose -f docker-compose.prod.yml logs -f
+
+# View specific service logs
+docker-compose -f docker-compose.prod.yml logs backend
+docker-compose -f docker-compose.prod.yml logs nginx
+docker-compose -f docker-compose.prod.yml logs postgres
+```
+
+### Performance Monitoring
+- Access Grafana dashboard at https://monitoring.your-domain.com
+- Monitor API response times and error rates
+- Check database performance metrics
+- Review cache hit rates in Redis
+
+## Legacy Troubleshooting
 
 ### Common Issues
 1. **CORS errors**: Check CORS_ORIGINS in backend config
