@@ -41,9 +41,9 @@ fi
 
 # Build and deploy
 echo "🏗️  Building and starting services..."
-docker-compose -f docker-compose.prod.yml down
-docker-compose -f docker-compose.prod.yml build --no-cache
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml down
+docker compose -f docker-compose.prod.yml build --no-cache
+docker compose -f docker-compose.prod.yml up -d
 
 # Wait for services to start
 echo "⏳ Waiting for services to start..."
@@ -69,7 +69,7 @@ fi
 
 # Database migration
 echo "🗄️  Running database migrations..."
-docker-compose -f docker-compose.prod.yml exec -T backend python -c "
+docker compose -f docker-compose.prod.yml exec -T backend python -c "
 import asyncpg
 import asyncio
 import os
@@ -95,7 +95,7 @@ echo "API Docs: https://api.$DOMAIN/docs"
 echo "Monitoring: https://monitoring.$DOMAIN"
 echo ""
 echo "📊 View logs with:"
-echo "docker-compose -f docker-compose.prod.yml logs -f"
+echo "docker compose -f docker-compose.prod.yml logs -f"
 echo ""
 echo "🔧 Manage services with:"
-echo "docker-compose -f docker-compose.prod.yml [start|stop|restart|down]"
+echo "docker compose -f docker-compose.prod.yml [start|stop|restart|down]"
