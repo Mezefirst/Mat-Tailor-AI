@@ -1,6 +1,55 @@
 # MatTailor AI Deployment Guide
 
+# MatTailor AI Deployment Guide
+
 ## Quick Deploy Options
+
+### Development Deployment (Local Development)
+
+#### Prerequisites
+- Docker and Docker Compose v2
+- Git
+
+#### Quick Development Setup
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Mezefirst/Mat-Tailor-AI.git
+   cd Mat-Tailor-AI
+   ```
+
+2. Run development deployment:
+   ```bash
+   ./scripts/deploy-dev.sh
+   ```
+
+3. Access the application:
+   - Frontend: http://localhost:3000
+   - API: http://localhost:8000
+   - API Docs: http://localhost:8000/docs
+
+### Test Deployment (Staging Environment)
+
+#### Prerequisites
+- Docker and Docker Compose v2
+- Environment variables configured
+
+#### Quick Test Setup
+1. Create test environment file:
+   ```bash
+   cp .env.test .env.test.local
+   # Edit .env.test.local with your test values
+   ```
+
+2. Run test deployment:
+   ```bash
+   ./scripts/deploy-test.sh .env.test.local
+   ```
+
+3. Access the application:
+   - Frontend: http://localhost:3000
+   - API: http://localhost:8000
+   - PostgreSQL: localhost:5433
+   - Redis: localhost:6380
 
 ### Production Deployment (Recommended)
 
@@ -16,13 +65,13 @@
    cd Mat-Tailor-AI
    ```
 
-2. Create production environment file:
+3. Create production environment file:
    ```bash
-   cp backend/.env.example .env
+   cp .env.production .env
    # Edit .env with your production values
    ```
 
-3. Run automated deployment:
+4. Run automated deployment:
    ```bash
    ./scripts/deploy.sh your-domain.com .env
    ```
@@ -35,10 +84,43 @@
 
 2. Configure environment variables in `.env`
 
-3. Deploy with Docker Compose:
+4. Deploy with Docker Compose:
    ```bash
-   docker-compose -f docker-compose.prod.yml up -d
+   docker compose -f docker-compose.prod.yml up -d
    ```
+
+## Environment Configurations
+
+### Available Environment Files
+- `.env.development` - Local development with hot reloading
+- `.env.test` - Test/staging environment with isolated database
+- `.env.production` - Production environment with security optimizations
+
+### Environment Variables Overview
+
+#### Required for All Environments
+```bash
+ENVIRONMENT=development|test|production
+SECRET_KEY=your-strong-secret-key
+DATABASE_URL=postgresql://user:pass@host:port/db
+REDIS_URL=redis://host:port/db
+```
+
+#### API Keys (Optional but Recommended)
+```bash
+OPENAI_API_KEY=your-openai-key
+HUGGINGFACE_API_KEY=your-hf-key
+MATWEB_API_KEY=your-matweb-key
+MATERIALS_PROJECT_API_KEY=your-mp-key
+```
+
+#### Production-Only Variables
+```bash
+CORS_ORIGINS=["https://yourdomain.com"]
+FRONTEND_URL=https://yourdomain.com
+BACKEND_URL=https://api.yourdomain.com
+GRAFANA_PASSWORD=secure-password
+```
 
 ### Frontend Deployment
 
@@ -346,10 +428,10 @@ ls -la nginx/ssl/
 #### Database Connection Issues
 ```bash
 # Check database logs
-docker-compose -f docker-compose.prod.yml logs postgres
+docker compose -f docker-compose.prod.yml logs postgres
 
 # Test database connection
-docker-compose -f docker-compose.prod.yml exec backend python -c "
+docker compose -f docker-compose.prod.yml exec backend python -c "
 import asyncpg
 import os
 import asyncio
@@ -369,7 +451,7 @@ asyncio.run(test())
 #### Environment Variables
 ```bash
 # Verify all required environment variables are set
-docker-compose -f docker-compose.prod.yml exec backend env | grep -E "(SECRET_KEY|DATABASE_URL|CORS_ORIGINS)"
+docker compose -f docker-compose.prod.yml exec backend env | grep -E "(SECRET_KEY|DATABASE_URL|CORS_ORIGINS)"
 ```
 
 ### Health Checks
@@ -381,12 +463,12 @@ docker-compose -f docker-compose.prod.yml exec backend env | grep -E "(SECRET_KE
 ### Log Analysis
 ```bash
 # View all service logs
-docker-compose -f docker-compose.prod.yml logs -f
+docker compose -f docker-compose.prod.yml logs -f
 
 # View specific service logs
-docker-compose -f docker-compose.prod.yml logs backend
-docker-compose -f docker-compose.prod.yml logs nginx
-docker-compose -f docker-compose.prod.yml logs postgres
+docker compose -f docker-compose.prod.yml logs backend
+docker compose -f docker-compose.prod.yml logs nginx
+docker compose -f docker-compose.prod.yml logs postgres
 ```
 
 ### Performance Monitoring
@@ -406,13 +488,13 @@ docker-compose -f docker-compose.prod.yml logs postgres
 ### Debug Commands
 ```bash
 # Backend logs
-docker-compose logs backend
+docker compose logs backend
 
 # Database connection test
-docker-compose exec backend python -c "from services.database import MaterialDatabase; print('DB OK')"
+docker compose exec backend python -c "from services.database import MaterialDatabase; print('DB OK')"
 
 # Frontend build issues
-docker-compose exec frontend npm run build
+docker compose exec frontend npm run build
 ```
 
 ## Scaling Architecture
