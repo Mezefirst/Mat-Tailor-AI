@@ -7,3 +7,4 @@ COPY . .
 RUN npm run build
 EXPOSE 3000
 CMD ["npm", "start"]
+RUN npm install --legacy-peer-deps
