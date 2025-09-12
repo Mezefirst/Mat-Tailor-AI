@@ -2,7 +2,7 @@
 MatTailor AI Backend - FastAPI Application
 Intelligent Material Discovery and Recommendation System
 """
-
+from pydantic_settings import BaseSettings
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
