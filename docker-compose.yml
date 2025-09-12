@@ -1,4 +1,5 @@
-version: 
+version: "3.8"
+
 
 services:
   # Frontend (React PWA)
