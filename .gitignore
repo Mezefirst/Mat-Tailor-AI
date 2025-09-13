@@ -15,6 +15,13 @@ dist/
 .env.test.local
 .env.production.local
 
+# SSL certificates and secrets
+nginx/ssl/*.pem
+nginx/ssl/*.key
+nginx/.htpasswd
+*.p12
+*.pfx
+
 # Cache
 .cache/
 */.cache/
@@ -23,12 +30,20 @@ dist/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+nginx/logs/
+*.log
 
 # Runtime data
 pids
 *.pid
 *.seed
 *.pid.lock
+
+# Database data
+postgres-data/
+redis-data/
+*.db
+*.sqlite
 
 # Python
 __pycache__/
@@ -57,6 +72,12 @@ venv/
 env/
 ENV/
 
+# ML Models (large files)
+models/
+*.model
+*.pkl
+*.joblib
+
 # IDE
 .vscode/
 .idea/
@@ -67,3 +88,12 @@ ENV/
 # OS
 .DS_Store
 Thumbs.db
+
+# Monitoring data
+grafana-data/
+prometheus-data/
+
+# Backup files
+*.backup
+*.bak
+backup_*.sql

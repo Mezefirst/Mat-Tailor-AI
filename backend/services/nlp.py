@@ -10,6 +10,11 @@ from typing import Dict, Any, Optional, List
 import json
 
 from models.material import MaterialQuery, Requirements, MaterialCategory, ApplicationDomain
+# If spark is a module or object you need to import
+from services.spark import SparkClient
+
+spark = SparkClient()
+
 
 logger = logging.getLogger(__name__)
 

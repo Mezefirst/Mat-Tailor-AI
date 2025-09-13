@@ -20,12 +20,31 @@ class Settings(BaseSettings):
     reload: bool = environment == "development"
     
     # CORS settings
-    cors_origins: List[str] = [
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "https://mattailor-ai.netlify.app",
-        "https://mattailor-ai.vercel.app"
-    ]
+    cors_origins: List[str] = []
+    
+    def __init__(self, **data):
+        super().__init__(**data)
+        # Set CORS origins from environment or use defaults
+        cors_env = os.getenv("CORS_ORIGINS")
+        if cors_env:
+            try:
+                import json
+                self.cors_origins = json.loads(cors_env)
+            except (json.JSONDecodeError, TypeError):
+                # Fallback to comma-separated values
+                self.cors_origins = [origin.strip() for origin in cors_env.split(",")]
+        else:
+            # Default CORS origins for development
+            self.cors_origins = [
+                "http://localhost:3000",
+                "http://localhost:5173",
+                "https://mattailor-ai.netlify.app", 
+                "https://mattailor-ai.vercel.app"
+            ]
+    
+    # Production domain settings
+    frontend_url: str = os.getenv("FRONTEND_URL", "http://localhost:3000")
+    backend_url: str = os.getenv("BACKEND_URL", "http://localhost:8000")
     
     # Database settings (for future implementation)
     database_url: Optional[str] = os.getenv("DATABASE_URL")
@@ -57,6 +76,10 @@ class Settings(BaseSettings):
     # External APIs
     material_database_api_url: Optional[str] = os.getenv("MATERIAL_DB_API_URL")
     supplier_api_url: Optional[str] = os.getenv("SUPPLIER_API_URL")
+    
+    # Third-party data source API keys
+    matweb_api_key: Optional[str] = os.getenv("MATWEB_API_KEY")
+    materials_project_api_key: Optional[str] = os.getenv("MATERIALS_PROJECT_API_KEY")
     
     # Performance settings
     worker_threads: int = int(os.getenv("WORKER_THREADS", 4))

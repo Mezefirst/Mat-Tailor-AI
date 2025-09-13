@@ -1,7 +1,5 @@
-version: '3.8'
-
 services:
-  # Frontend (React PWA)
+  # 🌐 Frontend (React PWA)
   frontend:
     build:
       context: ./frontend
@@ -9,17 +7,16 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - REACT_APP_API_URL=http://backend:8000
-      - REACT_APP_ENVIRONMENT=production
+      REACT_APP_API_URL: http://backend:8000
+      REACT_APP_ENVIRONMENT: production
     depends_on:
       - backend
     volumes:
       - ./frontend:/app
-      - /app/node_modules
     networks:
       - mattailor-network
 
-  # Backend (FastAPI)
+  # 🧠 Backend (FastAPI)
   backend:
     build:
       context: ./backend
@@ -27,12 +24,12 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - ENVIRONMENT=production
-      - DATABASE_URL=postgresql://postgres:password@postgres:5432/mattailor
-      - REDIS_URL=redis://redis:6379/0
-      - SECRET_KEY=${SECRET_KEY:-change-this-in-production}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - HUGGINGFACE_API_KEY=${HUGGINGFACE_API_KEY}
+      ENVIRONMENT: production
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/mattailor
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${SECRET_KEY:-change-this-in-production}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      HUGGINGFACE_API_KEY: ${HUGGINGFACE_API_KEY}
     depends_on:
       - postgres
       - redis
@@ -42,13 +39,13 @@ services:
     networks:
       - mattailor-network
 
-  # PostgreSQL Database
+  # 🗄️ PostgreSQL Database
   postgres:
     image: postgres:15-alpine
     environment:
-      - POSTGRES_DB=mattailor
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password
+      POSTGRES_DB: mattailor
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./backend/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -57,7 +54,7 @@ services:
     networks:
       - mattailor-network
 
-  # Redis for caching
+  # ⚡ Redis for caching
   redis:
     image: redis:7-alpine
     command: redis-server --appendonly yes
@@ -68,7 +65,7 @@ services:
     networks:
       - mattailor-network
 
-  # Nginx reverse proxy (optional)
+  # 🚪 Nginx reverse proxy (optional)
   nginx:
     image: nginx:alpine
     ports:
