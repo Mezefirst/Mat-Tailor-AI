@@ -1,0 +1,76 @@
+services:
+  # Frontend (React PWA) - Test Environment
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+      - VITE_ENVIRONMENT=test
+    depends_on:
+      - backend
+    networks:
+      - mattailor-test-network
+
+  # Backend (FastAPI) - Test Environment  
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=test
+      - DEBUG=true
+      - SECRET_KEY=${SECRET_KEY:-test-secret-key-change-me}
+      - DATABASE_URL=postgresql://postgres:testpassword@postgres:5432/mattailor_test
+      - REDIS_URL=redis://redis:6379/1
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - HUGGINGFACE_API_KEY=${HUGGINGFACE_API_KEY:-}
+      - MATWEB_API_KEY=${MATWEB_API_KEY:-}
+      - MATERIALS_PROJECT_API_KEY=${MATERIALS_PROJECT_API_KEY:-}
+      - CORS_ORIGINS=["http://localhost:3000","http://127.0.0.1:3000"]
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - models-cache:/app/models
+    networks:
+      - mattailor-test-network
+
+  # PostgreSQL Database - Test Environment
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=mattailor_test
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=testpassword
+    volumes:
+      - postgres-test-data:/var/lib/postgresql/data
+      - ./backend/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5433:5432"  # Different port to avoid conflicts
+    networks:
+      - mattailor-test-network
+
+  # Redis for caching - Test Environment
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-test-data:/data
+    ports:
+      - "6380:6379"  # Different port to avoid conflicts
+    networks:
+      - mattailor-test-network
+
+volumes:
+  postgres-test-data:
+  redis-test-data:
+  models-cache:
+
+networks:
+  mattailor-test-network:
+    driver: bridge

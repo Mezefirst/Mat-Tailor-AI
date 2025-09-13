@@ -35,7 +35,7 @@ if ! command -v certbot &> /dev/null; then
 fi
 
 # Stop nginx if running
-docker-compose -f docker-compose.prod.yml stop nginx 2>/dev/null || true
+docker compose -f docker-compose.prod.yml stop nginx 2>/dev/null || true
 
 # Generate certificates
 echo "Generating SSL certificates..."
@@ -69,7 +69,7 @@ sudo certbot renew --quiet
 sudo cp /etc/letsencrypt/live/$DOMAIN/fullchain.pem $SSL_DIR/
 sudo cp /etc/letsencrypt/live/$DOMAIN/privkey.pem $SSL_DIR/
 sudo chown $USER:$USER $SSL_DIR/*.pem
-docker-compose -f docker-compose.prod.yml exec nginx nginx -s reload
+docker compose -f docker-compose.prod.yml exec nginx nginx -s reload
 EOF
 
 chmod +x ./scripts/renew-ssl.sh
