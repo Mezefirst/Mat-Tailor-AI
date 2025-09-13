@@ -5,10 +5,10 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     environment:
-      - VITE_API_URL=${BACKEND_URL:-https://api.mattailor.com}
-      - VITE_ENVIRONMENT=production
+      - REACT_APP_API_URL=${BACKEND_URL:-https://api.mattailor.com}
+      - REACT_APP_ENVIRONMENT=production
     volumes:
-      - frontend-dist:/app/dist
+      - frontend-dist:/usr/share/nginx/html
     networks:
       - mattailor-network
 
