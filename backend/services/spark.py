@@ -9,10 +9,21 @@ logger = logging.getLogger(__name__)
 
 class SparkClient:
     def __init__(self):
-        self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        logger.info("SparkClient initialized with OpenAI")
+        api_key = os.getenv("OPENAI_API_KEY")
+        if api_key:
+            self.client = OpenAI(api_key=api_key)
+            self.enabled = True
+            logger.info("SparkClient initialized with OpenAI")
+        else:
+            self.client = None
+            self.enabled = False
+            logger.warning("SparkClient initialized without OpenAI API key - functionality limited")
 
     async def llm(self, prompt: str, model_name: str = "gpt-4", stream: bool = False):
+        if not self.enabled:
+            logger.warning("OpenAI API not available - returning mock response")
+            return "Mock response: OpenAI API key not configured"
+            
         loop = asyncio.get_event_loop()
         try:
             if stream:
