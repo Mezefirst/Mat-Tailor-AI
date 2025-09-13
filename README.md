@@ -2,28 +2,47 @@
 
 MatTailor AI that empowers engineers, designers, and manufacturers to discover, simulate, tailor, and source optimal materials for specific applications—without compromising performance, cost, or sustainability.
 
+## 🎉 Docker Deployment Status: ✅ WORKING
+
+The Docker deployment has been successfully fixed and tested. All backend services are operational.
+
 ## 🚀 Quick Start with Docker
 
-### Development Environment
+### Option 1: Backend Services Only (Recommended for Testing)
 ```bash
 git clone https://github.com/Mezefirst/Mat-Tailor-AI.git
 cd Mat-Tailor-AI
-./scripts/deploy-dev.sh
-```
-Access at: http://localhost:3000
 
-### Test Environment
-```bash
-cp .env.test .env.test.local
-# Edit .env.test.local with your API keys
-./scripts/deploy-test.sh .env.test.local
+# Quick start with deployment script
+./deploy.sh backend-only
+
+# Or manually with docker compose
+docker compose -f docker-compose.backend-only.yml up -d
+
+# Test the API
+curl http://localhost:8000/health
 ```
 
-### Production Environment
+**Access points:**
+- API Documentation: http://localhost:8000/docs
+- Health Check: http://localhost:8000/health
+- API Root: http://localhost:8000/
+
+### Option 2: Full Development Environment
 ```bash
-cp .env.production .env
+# Start all services including frontend
+./deploy.sh dev
+
+# Access at:
+# Frontend: http://localhost:3000
+# API: http://localhost:8000/docs
+```
+
+### Option 3: Production Environment
+```bash
+cp .env.template .env
 # Edit .env with your production values
-./scripts/deploy.sh your-domain.com .env
+./deploy.sh prod
 ```
 
 ## 📚 Documentation
