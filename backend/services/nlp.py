@@ -11,8 +11,9 @@ import json
 
 from models.material import MaterialQuery, Requirements, MaterialCategory, ApplicationDomain
 # If spark is a module or object you need to import
-from services import spark
+from services.spark import SparkClient
 
+spark = SparkClient()
 
 
 logger = logging.getLogger(__name__)
