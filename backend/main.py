@@ -25,7 +25,7 @@ from services.recommender import MaterialRecommender
 from services.nlp import NLPProcessor
 from services.simulation import PropertySimulator
 from services.rl_stub import RLPlanner
-from services.spark import SparkClient  # ✅ Added spark import
+
 
 # Models
 from models.material import Material, MaterialQuery, RecommendationResult
@@ -61,7 +61,7 @@ recommender = MaterialRecommender()
 nlp_processor = NLPProcessor()
 simulator = PropertySimulator()
 rl_planner = RLPlanner()
-spark = SparkClient()  # ✅ Instantiated spark
+
 
 # Configure CORS
 app.add_middleware(
